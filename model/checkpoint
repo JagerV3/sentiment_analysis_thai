@@ -1,0 +1,2 @@
+model_checkpoint_path: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-mashita.tfl"
+all_model_checkpoint_paths: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-mashita.tfl"
