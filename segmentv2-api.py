@@ -43,6 +43,7 @@ class Thai_segment(Resource):
         else:
             data['Label'] = "Negative"
 
+        data['Sentence'] = sentence
         json_result = json.dumps(data, ensure_ascii=False)
         response = Response(json_result, content_type="application/json; charset=utf-8")
         return response
@@ -72,11 +73,11 @@ class Thai_segment(Resource):
         network = regression(network, optimizer='adam', learning_rate=0.01, loss='categorical_crossentropy')
 
         model = tflearn.DNN(network)
-        model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=None , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-        model.save("./model/thaitext-classifier-mashita.tfl")
-        print("Network trained and saved as thaitext-classifier-mashita.tfl")
+        #model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=None , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
+        #model.save("./model/thaitext-classifier-mashita.tfl")
+        #print("Network trained and saved as thaitext-classifier-mashita.tfl")
 
-        # model.load("thaitext-classifier.tfl")
+        model.load("./model/thaitext-classifier-mashita.tfl")
         #file_path3 = 'Cleaned-Masita-traindataset-2.csv'
         input_sentencedata = self.preprocess_server(sentencedata)
 
