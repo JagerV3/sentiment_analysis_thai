@@ -38,8 +38,8 @@ class Thai_segment(Resource):
 
         evaluation_result = self.segment_analysis(sentence)
         data = {}
-        data['positive result'] = str(evaluation_result[0][1])
-        data['negative result'] = str(evaluation_result[0][0])
+        data['positiveResult'] = str(evaluation_result[0][1])
+        data['negativeResult'] = str(evaluation_result[0][0])
 
         if (evaluation_result[0][1]>=evaluation_result[0][0]):
             data['Label'] = "Positive"
