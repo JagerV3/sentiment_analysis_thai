@@ -16,11 +16,14 @@ from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 from tflearn.data_utils import load_csv
+from tensorflow.python.framework.ops import reset_default_graph
 
 from flask import Flask, jsonify, json, Response
 from flask_restful import reqparse, Api, Resource
 from json import encoder
 from decimal import Decimal
+from tflearn.data_utils import shuffle
+
 
 app = Flask(__name__)
 #app.config['JSON_AS_ASCII'] = False
@@ -60,9 +63,9 @@ class Thai_segment(Resource):
         neurons = len(data[0])
 
         # shuffle the dataset
-        from tflearn.data_utils import shuffle
         data, labels = shuffle(data, labels)
 
+        reset_default_graph()
         network = input_data(shape=[None, neurons])
         network = fully_connected(network, 8, activation='relu')
         network = fully_connected(network, 8*2, activation='relu')
@@ -79,6 +82,7 @@ class Thai_segment(Resource):
 
         model.load("./model/thaitext-classifier-mashita.tfl")
         #file_path3 = 'Cleaned-Masita-traindataset-2.csv'
+
         input_sentencedata = self.preprocess_server(sentencedata)
 
         vector_one = []
@@ -104,7 +108,6 @@ class Thai_segment(Resource):
         #model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
         #model.save("thaitext-classifier-mashita.tfl")
         #print("Network trained and saved as Pthaitext-classifier-mashita.tfl")
-
 
         #result = model.evaluate(resultdata, testlabels)
 
