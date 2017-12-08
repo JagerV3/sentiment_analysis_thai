@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 from flask_api import FlaskAPI
-from nltk import NaiveBayesClassifier as nbc
-from pythainlp.tokenize import word_tokenize
-import codecs
-from itertools import chain
+from flask_cors import CORS
 import requests
-import base64
 import numpy as np
-import csv
 
 import tflearn
 from tflearn.layers.core import input_data, dropout, fully_connected
@@ -20,14 +15,12 @@ from tensorflow.python.framework.ops import reset_default_graph
 
 from flask import Flask, jsonify, json, Response
 from flask_restful import reqparse, Api, Resource
-from json import encoder
-from decimal import Decimal
 from tflearn.data_utils import shuffle
 
 
 app = Flask(__name__)
 #app.config['JSON_AS_ASCII'] = False
-
+CORS(app)
 api = Api(app)
 parser = reqparse.RequestParser()
 parser.add_argument('sentence')
@@ -52,7 +45,7 @@ class Thai_segment(Resource):
         return response
 
     def segment_analysis(self, sentencedata):
-        
+
         file_path = 'Cleaned-Masita corpus 2.csv'
         data, labels = load_csv(file_path, target_column=0, categorical_labels=True, n_classes=2)
 
@@ -117,49 +110,49 @@ class Thai_segment(Resource):
         #print("Evaluation result: %s" %result)
 
     def preprocess_server(self, data):
-            rlist = []
-            preprocessdata = []
-            for i in range(len(data)):
-                x = requests.get('http://174.138.26.245:5000/preprocess/'+data[i][0])
-                resu = x.json()
-                preprocessdata.append(resu['result'])
-            for i in range(len(preprocessdata)):
-                r = requests.get('http://174.138.26.245:5000/tokenize/'+preprocessdata[i])
-                result = r.json()
-                rlist.append(result['result'])
-            return rlist
+        rlist = []
+        preprocessdata = []
+        for i in range(len(data)):
+            x = requests.get('http://174.138.26.245:5000/preprocess/'+data[i][0])
+            resu = x.json()
+            preprocessdata.append(resu['result'])
+        for i in range(len(preprocessdata)):
+            r = requests.get('http://174.138.26.245:5000/tokenize/'+preprocessdata[i])
+            result = r.json()
+            rlist.append(result['result'])
+        return rlist
 
     def get_uniquewords(self, listdata):
-            uniquewords = []
-            for line in range(len(listdata)):
-                words = listdata[line]
-                inner_data = []
-                for word in words:
-                    if word not in uniquewords:
-                        #w = repr(word.encode('utf-8'))
-                        uniquewords.append(word)
-            return uniquewords
+        uniquewords = []
+        for line in range(len(listdata)):
+            words = listdata[line]
+            inner_data = []
+            for word in words:
+                if word not in uniquewords:
+                    #w = repr(word.encode('utf-8'))
+                    uniquewords.append(word)
+        return uniquewords
 
     def preprocess(self, listdata, uniquewords):
-            sentences = []
-            vectors = []
-            #f = open(file_path, 'r')
-            for line in range(len(listdata)):
-                words = listdata[line]
-                inner_data = []
-                for word in words:
-                    inner_data.append(word)
-                sentences.append(inner_data)
-            
-            for sentence in sentences:
-                inner_vector = []
-                for word in uniquewords:
-                    if word in sentence:
-                        inner_vector.append(1)
-                    else:
-                        inner_vector.append(0)
-                vectors.append(inner_vector)
-            return np.array(vectors, dtype=np.float32)
+        sentences = []
+        vectors = []
+        #f = open(file_path, 'r')
+        for line in range(len(listdata)):
+            words = listdata[line]
+            inner_data = []
+            for word in words:
+                inner_data.append(word)
+            sentences.append(inner_data)
+
+        for sentence in sentences:
+            inner_vector = []
+            for word in uniquewords:
+                if word in sentence:
+                    inner_vector.append(1)
+                else:
+                    inner_vector.append(0)
+            vectors.append(inner_vector)
+        return np.array(vectors, dtype=np.float32)
 
 api.add_resource(Thai_segment, '/Thai_segment/<sentence>')
 
