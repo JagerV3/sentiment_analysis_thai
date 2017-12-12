@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 from flask_api import FlaskAPI
-from nltk import NaiveBayesClassifier as nbc
-from pythainlp.tokenize import word_tokenize
 import codecs
 from itertools import chain
 import requests
@@ -33,10 +31,12 @@ parser = reqparse.RequestParser()
 parser.add_argument('sentence')
 
 class Thai_segment(Resource):
+    
     def get(self, sentence):
         args = parser.parse_args()
 
-        evaluation_result = self.segment_analysis(sentence)
+        evaluation_result = self.sentiment_analysis(sentence)
+        #print (evaluation_result)
         data = {}
         data['positiveResult'] = str(evaluation_result[0][1])
         data['negativeResult'] = str(evaluation_result[0][0])
@@ -49,18 +49,20 @@ class Thai_segment(Resource):
         data['Sentence'] = sentence
         json_result = json.dumps(data, ensure_ascii=False)
         response = Response(json_result, content_type="application/json; charset=utf-8")
+        del evaluation_result
+        #evaluation_result = []
         return response
 
-    def segment_analysis(self, sentencedata):
+    def sentiment_analysis(self, sentencedata):
         
-        file_path = 'Cleaned-Masita corpus 2.csv'
+        file_path = './corpus/Combined_inhousedata_UTF8-2.csv'
         data, labels = load_csv(file_path, target_column=0, categorical_labels=True, n_classes=2)
 
         pdata =self.preprocess_server(data)
         unique_words = self.get_uniquewords(pdata)
-        data = self.preprocess(pdata, unique_words)
+        data = self.preprocess_vector(pdata, unique_words)
 
-        neurons = len(data[0])
+        neurons = len(unique_words)
 
         # shuffle the dataset
         data, labels = shuffle(data, labels)
@@ -76,14 +78,10 @@ class Thai_segment(Resource):
         network = regression(network, optimizer='adam', learning_rate=0.01, loss='categorical_crossentropy')
 
         model = tflearn.DNN(network)
-        #model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=None , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-        #model.save("./model/thaitext-classifier-mashita.tfl")
-        #print("Network trained and saved as thaitext-classifier-mashita.tfl")
+        model.load("./model/thaitext-classifier-CID_UTF8-burgerking-2.tfl")
 
-        model.load("./model/thaitext-classifier-mashita.tfl")
-        #file_path3 = 'Cleaned-Masita-traindataset-2.csv'
-
-        input_sentencedata = self.preprocess_server(sentencedata)
+        input_sentencedata = self.preprocess_server_2(sentencedata)
+        #input_uniquewords = self.get_uniquewords(input_sentencedata)
 
         vector_one = []
         for word in unique_words:
@@ -91,30 +89,13 @@ class Thai_segment(Resource):
                 vector_one.append(1)
             else:
                 vector_one.append(0)
-
         vector_one = np.array(vector_one, dtype=np.float32)
+        #print(vector_one)
 
         label = model.predict_label([vector_one])
-        #print (label)
-
         pred = model.predict([vector_one])
-        #print(pred)
+
         return pred
-
-        #testdata, testlabels = load_csv(file_path3, target_column=0, categorical_labels=True, n_classes=2)
-        #resultdata = self.preprocess_server(testdata)
-        #resultdata = self.preprocess(resultdata, unique_words)
-
-        #model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-        #model.save("thaitext-classifier-mashita.tfl")
-        #print("Network trained and saved as Pthaitext-classifier-mashita.tfl")
-
-        #result = model.evaluate(resultdata, testlabels)
-
-        #return label
-
-        #predict = model.predict(resultdata)
-        #print("Evaluation result: %s" %result)
 
     def preprocess_server(self, data):
             rlist = []
@@ -129,18 +110,30 @@ class Thai_segment(Resource):
                 rlist.append(result['result'])
             return rlist
 
-    def get_uniquewords(self, listdata):
-            uniquewords = []
-            for line in range(len(listdata)):
-                words = listdata[line]
-                inner_data = []
-                for word in words:
-                    if word not in uniquewords:
-                        #w = repr(word.encode('utf-8'))
-                        uniquewords.append(word)
-            return uniquewords
+    def preprocess_server_2(self, data):
+            rlist = []
+            preprocessdata = []
+            x = requests.get('http://174.138.26.245:5000/preprocess/'+data)
+            resu = x.json()
+            preprocessdata.append(resu['result'])
+            for i in range(len(preprocessdata)):
+                r = requests.get('http://174.138.26.245:5000/tokenize/'+preprocessdata[i])
+                result = r.json()
+                rlist.append(result['result'])
+            return rlist
 
-    def preprocess(self, listdata, uniquewords):
+    def get_uniquewords(self, listdata):
+        uniquewords = []
+        for line in range(len(listdata)):
+            words = listdata[line]
+            inner_data = []
+            for word in words:
+                if word not in uniquewords:
+                    #w = repr(word.encode('utf-8'))
+                    uniquewords.append(word)
+        return uniquewords
+
+    def preprocess_vector(self, listdata, uniquewords):
             sentences = []
             vectors = []
             #f = open(file_path, 'r')
