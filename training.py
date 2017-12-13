@@ -21,8 +21,11 @@ from tflearn.data_utils import shuffle
 
 class Thai_segment():
     
-    file_path = './corpus/Combined_inhousedata_UTF8-1.csv'
+    file_path = './corpus/Combined_inhousedata_UTF8-3.csv'
+    file_path3 = './trainingdataset/combined_inhousedata-UTF8-traindataset-3.csv'
+
     data, labels = load_csv(file_path, target_column=0, categorical_labels=True, n_classes=2)
+    testdata, testlabels = load_csv(file_path3, target_column=0, categorical_labels=True, n_classes=2)
 
     def preprocess_server(data):
         rlist = []
@@ -38,7 +41,7 @@ class Thai_segment():
         return rlist
 
     def get_uniquewords(listdata):
-        f = open('./uniqueword/Combined_inhousedata_UTF8-1_uniquewords.csv', 'w')
+        f = open('./uniqueword/combined_inhousedata_UTF8-3_uniquewords.csv', 'w')
 
         uniquewords = []
         for line in range(len(listdata)):
@@ -76,6 +79,8 @@ class Thai_segment():
     pdata = preprocess_server(data)
     unique_words = get_uniquewords(pdata)
     data = preprocess_vector(pdata, unique_words)
+    resultdata = preprocess_server(testdata)
+    resultdata = preprocess_vector(resultdata, unique_words)
 
     neurons = len(unique_words)
 
@@ -94,18 +99,35 @@ class Thai_segment():
 
     model = tflearn.DNN(network)
 
-    file_path3 = './trainingdataset/combined_inhousedata-UTF8-traindataset-1.csv'
-
-    testdata, testlabels = load_csv(file_path3, target_column=0, categorical_labels=True, n_classes=2)
-    resultdata = preprocess_server(testdata)
-    resultdata = preprocess_vector(resultdata, unique_words)
-
-    model.fit(data, labels, n_epoch=40, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-    model.save("./model/thaitext-classifier-combined_inhousedata-UTF8-1.tfl")
-    print("Network trained and saved as thaitext-classifier-combined_inhousedata-UTF8-1.tfl")
+    model.fit(data, labels, n_epoch=100, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
+    model.save("./model/thaitext-classifier-combined_inhousedata-UTF8-3-100.tfl")
+    print("Network trained and saved as thaitext-classifier-combined_inhousedata-UTF8-3-100.tfl")
 
     result = model.evaluate(resultdata, testlabels)
-
-    predict = model.predict(resultdata)
     print("Evaluation result: %s" %result)
     
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+    predict = model.predict(resultdata)
+    for i in range(0, len(testlabels)):
+        pred = predict[i]
+        label = testlabels[i]
+        if label[1] == 1: # data is supposed be positive
+            if pred[1] > 0.5:   # data is positive
+                tp += 1
+            else:               # data is negative
+                fp += 1
+        else:               # data is supposed to negative
+            if pred[0] > 0.5:
+                tn += 1         # data is negative
+            else:
+                fn += 1         # data is positive
+
+    precision = float(tp / (tp + fp))
+    recall = float(tp / (tp + fn))
+    accuracy = float((tp + tn)/(tp + fp + tn + fn))
+    f1 = float((2*precision*recall)/(precision+recall))
+    print ("Precision: %s; Recall: %s" %(precision, recall))
+    print("Acc: %s, F1: %s" %(accuracy, f1))
