@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+from flask_api import FlaskAPI
+import codecs
+from itertools import chain
 import requests
+import base64
 import numpy as np
 import csv
 
@@ -18,8 +22,8 @@ from tflearn.data_utils import shuffle
 
 class Thai_segment():
     
-    file_path = './corpus/Combined_inhousedata_UTF8-1.csv'
-    file_path3 = './trainingdataset/combined_inhousedata-UTF8-traindataset-1.csv'
+    file_path = './corpus/Pizza_UTF8-3.csv'
+    file_path3 = './trainingdataset/pizza-UTF8-traindataset-3.csv'
     data, labels = load_csv(file_path, target_column=0, categorical_labels=True, n_classes=2)
     testdata, testlabels = load_csv(file_path3, target_column=0, categorical_labels=True, n_classes=2)
 
@@ -36,8 +40,8 @@ class Thai_segment():
             rlist.append(result['result'])
         return rlist
 
-    def get_uniquewords(listdata):
-        f = open('./uniqueword/combined_inhousedata_UTF8-1_uniquewords.csv', 'w')
+    '''def get_uniquewords(listdata):
+        f = open('./uniqueword/combined_inhousedata_UTF8-3_uniquewords.csv', 'w')
 
         uniquewords = []
         for line in range(len(listdata)):
@@ -49,7 +53,7 @@ class Thai_segment():
                     uniquewords.append(word)
                     f.write(word+'\n')
         f.close()
-        return uniquewords
+        return uniquewords'''
 
     def preprocess_vector(listdata, uniquewords):
             sentences = []
@@ -75,8 +79,16 @@ class Thai_segment():
                 mainvector.append(vectors)
             return np.array(mainvector, dtype=np.float32)
 
+    def uniqueword_csvload():
+        uniquewords = []
+        f = open('./uniqueword/Pizza_UTF8-3_uniquewords.csv', 'r')
+        for word in f:
+            uniquewords.append(word.strip())
+        return uniquewords
+
     pdata = preprocess_server(data)
-    unique_words = get_uniquewords(pdata)
+    # unique_words = get_uniquewords(pdata)
+    unique_words = uniqueword_csvload()
     data = preprocess_vector(pdata, unique_words)
     resultdata = preprocess_server(testdata)
     resultdata = preprocess_vector(resultdata, unique_words)
@@ -103,8 +115,8 @@ class Thai_segment():
     model = tflearn.DNN(network)
 
     model.fit(data, labels, n_epoch=100, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-    model.save("./model/thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl")
-    print("Network trained and saved as thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl")
+    model.save("./model/thaitext-classifier-pizza-UTF8-3-100.tfl")
+    print("Network trained and saved as thaitext-classifier-pizza-UTF8-3-100.tfl")
 
     result = model.evaluate(resultdata, testlabels)
     print("Evaluation result: %s" %result)

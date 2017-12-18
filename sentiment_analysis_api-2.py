@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-from flask_api import FlaskAPI
-import codecs
-from itertools import chain
 import requests
-import base64
 import numpy as np
 import csv
 
@@ -18,8 +14,6 @@ from tensorflow.python.framework.ops import reset_default_graph
 
 from flask import Flask, jsonify, json, Response
 from flask_restful import reqparse, Api, Resource
-from json import encoder
-from decimal import Decimal
 from tflearn.data_utils import shuffle
 
 
@@ -35,7 +29,7 @@ class Thai_segment(Resource):
     def get(self, sentence):
         args = parser.parse_args()
         evaluation_result = self.sentiment_analysis(sentence)
-        print(evaluation_result)
+        #print(evaluation_result)
         data = {}
         data['positiveResult'] = str(evaluation_result[0][1])
         data['negativeResult'] = str(evaluation_result[0][0])
@@ -65,10 +59,10 @@ class Thai_segment(Resource):
 
     def uniqueword_csvload(self):
         uniquewords = []
-        f = open('./uniqueword/Combined_inhousedata_UTF8-1_uniquewords.csv', 'r')
+        f = open('./uniqueword/combined_inhousedata_UTF8-1_uniquewords.csv', 'r')
         for word in f:
             uniquewords.append(word.strip())
-        return uniquewords   
+        return uniquewords
 
     def sentiment_analysis(self, sentencedata):
         
@@ -80,21 +74,21 @@ class Thai_segment(Resource):
         # data, labels = shuffle(data, labels)
 
         reset_default_graph()
-        network = input_data(shape=[None, neurons])
-        network = conv_1d(network, 16, 3, activation='relu')
+        network = input_data(shape=[None, 1, neurons])
+        network = conv_1d(network, 8, 3, activation='relu')
         network = max_pool_1d(network, 3)
 
-        network = conv_1d(network, 32, 3, activation='relu')
+        network = conv_1d(network, 16, 3, activation='relu')
         network = max_pool_1d(network, 3)
         
-        network = fully_connected(network, 16, activation='relu')
+        network = fully_connected(network, 8, activation='relu')
         network = dropout(network, 0.5)
 
         network = fully_connected(network, 2, activation='softmax')
         network = regression(network, optimizer='adam', learning_rate=0.01, loss='categorical_crossentropy')
 
         model = tflearn.DNN(network)
-        model.load("./model/thaitext-classifier-combined_inhousedata-UTF8-1.tfl")
+        model.load("./model/thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl")
 
         input_sentencedata = self.preprocess_server_2(sentencedata)[0]
         #input_uniquewords = self.get_uniquewords(input_sentencedata)
@@ -103,15 +97,17 @@ class Thai_segment(Resource):
         for word in input_sentencedata:
             sentences.append(word)
         vector_one = []
+        inner_vector = []
         for word in unique_words:
             if word in sentences:
                 vector_one.append(1)
             else:
                 vector_one.append(0)
-        vector_one = np.array(vector_one, dtype=np.float32)
+        inner_vector.append(vector_one)
+        inner_vector = np.array(inner_vector, dtype=np.float32)
 
-        label = model.predict_label([vector_one])
-        pred = model.predict([vector_one])
+        label = model.predict_label([inner_vector])
+        pred = model.predict([inner_vector])
 
         return pred
 

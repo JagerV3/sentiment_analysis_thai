@@ -1,2 +1,2 @@
-model_checkpoint_path: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl"
-all_model_checkpoint_paths: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl"
+model_checkpoint_path: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-pizza-UTF8-3-100.tfl"
+all_model_checkpoint_paths: "/Users/JagerV3/work/sentiment_analysis_thai/model/thaitext-classifier-pizza-UTF8-3-100.tfl"
