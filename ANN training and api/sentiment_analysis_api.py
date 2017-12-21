@@ -7,7 +7,6 @@ import csv
 import tflearn
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_1d, max_pool_1d
-from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 from tflearn.data_utils import load_csv
 from tensorflow.python.framework.ops import reset_default_graph
@@ -29,8 +28,8 @@ class Thai_sentiment(Resource):
     def get(self, sentence):
         args = parser.parse_args()
         evaluation_result = self.sentiment_analysis(sentence)
-        #print(evaluation_result)
         data = {}
+        print (evaluation_result)
         data['positiveResult'] = str(evaluation_result[0][1])
         data['negativeResult'] = str(evaluation_result[0][0])
 
@@ -59,10 +58,10 @@ class Thai_sentiment(Resource):
 
     def uniqueword_csvload(self):
         uniquewords = []
-        f = open('./uniqueword/combined_inhousedata_UTF8-4_uniquewords.csv', 'r')
+        f = open('./uniqueword/Combined_inhousedata_UTF8-4_uniquewords.csv', 'r')
         for word in f:
             uniquewords.append(word.strip())
-        return uniquewords
+        return uniquewords   
 
     def sentiment_analysis(self, sentencedata):
         
@@ -71,12 +70,9 @@ class Thai_sentiment(Resource):
         neurons = len(unique_words)
 
         reset_default_graph()
-        network = input_data(shape=[None, 1, neurons])
-        network = conv_1d(network, 8, 3, activation='relu')
-        network = max_pool_1d(network, 3)
-
-        network = conv_1d(network, 16, 3, activation='relu')
-        network = max_pool_1d(network, 3)
+        network = input_data(shape=[None, neurons])
+        network = fully_connected(network, 8, activation='relu')
+        network = fully_connected(network, 8*2, activation='relu')
         
         network = fully_connected(network, 8, activation='relu')
         network = dropout(network, 0.5)
@@ -85,7 +81,7 @@ class Thai_sentiment(Resource):
         network = regression(network, optimizer='adam', learning_rate=0.01, loss='categorical_crossentropy')
 
         model = tflearn.DNN(network)
-        model.load("./model/thaitext-classifier-combined_inhousedata-UTF8-4-100.tfl")
+        model.load("./model/thaitext-classifier-combined_inhousedata-UTF8-4-100-ANN.tfl")
 
         input_sentencedata = self.preprocess_server_2(sentencedata)[0]
         #input_uniquewords = self.get_uniquewords(input_sentencedata)
@@ -94,21 +90,19 @@ class Thai_sentiment(Resource):
         for word in input_sentencedata:
             sentences.append(word)
         vector_one = []
-        inner_vector = []
         for word in unique_words:
             if word in sentences:
                 vector_one.append(1)
             else:
                 vector_one.append(0)
-        inner_vector.append(vector_one)
-        inner_vector = np.array(inner_vector, dtype=np.float32)
-        print("inner_vector:", inner_vector)
-        label = model.predict_label([inner_vector])
-        pred = model.predict([inner_vector])
+        vector_one = np.array(vector_one, dtype=np.float32)
 
+        label = model.predict_label([vector_one])
+        pred = model.predict([vector_one])
+        print (label)
         return pred
 
-api.add_resource(Thai_sentiment, '/Thai_sentiment/<sentence>')
+api.add_resource(Thai_sentiment, '/Thai_sentimentv1/<sentence>')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

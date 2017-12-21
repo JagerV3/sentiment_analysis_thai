@@ -9,16 +9,15 @@ from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.conv import conv_1d, max_pool_1d
 
-from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 from tflearn.data_utils import load_csv
 from tensorflow.python.framework.ops import reset_default_graph
 
 from tflearn.data_utils import shuffle
 
-class Thai_segment():
+class Thai_sentiment():
     
-    file_path = './corpus/Combined_inhousedata_UTF8-1.csv'
+    file_path = './corpus/Combined_inhousedata_UTF8-4.csv'
     file_path3 = './trainingdataset/combined_inhousedata-UTF8-traindataset-1.csv'
     data, labels = load_csv(file_path, target_column=0, categorical_labels=True, n_classes=2)
     testdata, testlabels = load_csv(file_path3, target_column=0, categorical_labels=True, n_classes=2)
@@ -37,7 +36,7 @@ class Thai_segment():
         return rlist
 
     def get_uniquewords(listdata):
-        f = open('./uniqueword/combined_inhousedata_UTF8-1_uniquewords.csv', 'w')
+        f = open('./uniqueword/combined_inhousedata_UTF8-4_uniquewords.csv', 'w')
 
         uniquewords = []
         for line in range(len(listdata)):
@@ -45,7 +44,6 @@ class Thai_segment():
             inner_data = []
             for word in words:
                 if word not in uniquewords:
-                    #w = repr(word.encode('utf-8'))
                     uniquewords.append(word)
                     f.write(word+'\n')
         f.close()
@@ -103,8 +101,8 @@ class Thai_segment():
     model = tflearn.DNN(network)
 
     model.fit(data, labels, n_epoch=100, shuffle=True, validation_set=(resultdata, testlabels) , show_metric=True, batch_size=None, snapshot_epoch=True, run_id='task-classifier')
-    model.save("./model/thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl")
-    print("Network trained and saved as thaitext-classifier-combined_inhousedata-UTF8-1-100.tfl")
+    model.save("./model/thaitext-classifier-combined_inhousedata-UTF8-4-100.tfl")
+    print("Network trained and saved as thaitext-classifier-combined_inhousedata-UTF8-4-100.tfl")
 
     result = model.evaluate(resultdata, testlabels)
     print("Evaluation result: %s" %result)
