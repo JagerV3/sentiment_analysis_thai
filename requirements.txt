@@ -16,7 +16,7 @@ Jinja2==2.10
 marisa-trie==0.7.4
 Markdown==2.6.9
 MarkupSafe==1.0
-nltk==3.2.5
+nltk==3.4.5
 numpy==1.13.3
 olefile==0.44
 Pillow==4.3.0
