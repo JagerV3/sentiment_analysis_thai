@@ -9,7 +9,7 @@ Flask==0.12.2
 Flask-API==1.0
 Flask-RESTful==0.3.6
 future==0.16.0
-html5lib==0.9999999
+html5lib==0.99999999
 idna==2.6
 itsdangerous==0.24
 Jinja2==2.10
